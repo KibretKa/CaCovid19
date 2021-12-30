@@ -1,0 +1,134 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[62]:
+
+
+import pandas as pd
+pd.options.display.max_columns = 40
+import datetime
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from matplotlib.ticker import FuncFormatter
+#link to dataset https://open.canada.ca/data/en/dataset/261c32ab-4cfd-4f81-9dea-7b64065690dc
+df = pd.read_csv("...filepath.txt", sep=",", index_col = 'pruid')
+df.head()
+
+
+# In[63]:
+
+
+df["dateCopy"] = df.loc[:,"date"]
+df['Province Name']= df.loc[:,"prname"]
+
+
+# In[64]:
+
+
+#Rows I need for this analysis
+RowsToBeUse =  df[~df.prname.isin(['Canada','Repatriated travellers' ])]
+RowsToBeUse.prname.unique()
+
+
+# In[65]:
+
+
+# select fields
+df1 = RowsToBeUse[['Province Name','date','numtoday','numdeathstoday','numtestedtoday','numrecoveredtoday',]]
+df1.head()
+
+
+# In[66]:
+
+
+df1['date'] = pd.to_datetime(df1['date'])
+
+
+# In[67]:
+
+
+df1 = df1[df1['date'] > '2021-12-22']
+#df1
+
+
+# In[68]:
+
+
+df1['numdeathstoday'] = df1['numdeathstoday'].astype(int)
+df1['numrecoveredtoday'] = df1['numrecoveredtoday'].astype(int)
+df1 = df1.sort_values('numtoday',ascending=False)
+
+
+# In[69]:
+
+
+df1['Province Name'].unique()
+
+
+# In[70]:
+
+
+# normalize the counts 
+total_numberAsOfToday = df1.numtoday.sum()
+total_numberAsOfToday
+BC_per = df1[df1['Province Name'] == 'British Columbia'].numtoday.sum() / total_numberAsOfToday
+AB_per = df1[df1['Province Name'] == 'Alberta'].numtoday.sum() / total_numberAsOfToday
+SK_per = df1[df1['Province Name'] == 'Saskatchewan'].numtoday.sum() / total_numberAsOfToday
+MB_per = df1[df1['Province Name'] == 'Manitoba'].numtoday.sum() / total_numberAsOfToday
+ON_per =df1[df1['Province Name'] == 'Ontario'].numtoday.sum() / total_numberAsOfToday
+QC_per = df1[df1['Province Name'] == 'Quebec'].numtoday.sum() / total_numberAsOfToday
+NL_per = df1[df1['Province Name'] == 'Newfoundland and Labrador'].numtoday.sum() / total_numberAsOfToday
+NB_per = df1[df1['Province Name'] == 'New Brunswick'].numtoday.sum() / total_numberAsOfToday
+NS_per = df1[df1['Province Name'] == 'Nova Scotia'].numtoday.sum() / total_numberAsOfToday
+PE_per = df1[df1['Province Name'] == 'Prince Edward Island'].numtoday.sum() / total_numberAsOfToday
+YT_per = df1[df1['Province Name'] == 'Yukon'].numtoday.sum() / total_numberAsOfToday
+NT_per = df1[df1['Province Name'] == 'Northwest Territories'].numtoday.sum() / total_numberAsOfToday
+NU_per = df1[df1['Province Name'] == 'Nunavut'].numtoday.sum() / total_numberAsOfToday
+
+
+print(total_numberAsOfToday, BC_per, AB_per, SK_per, MB_per, ON_per, QC_per , NL_per, NB_per, NS_per, PE_per, YT_per, NT_per,  NU_per)
+
+
+# In[71]:
+
+
+#testout the above hypothesis 
+high_infection_provinces = (df1.groupby(['Province Name', 'date']).numtoday.sum().reset_index().sort_values('numtoday', ascending = False))
+high_infection_provinces = high_infection_provinces[:5]
+high_infection_provinces
+
+
+# In[76]:
+
+
+#total daily counts by province daily
+num_of_infections_per_day = (df1.groupby(['date','Province Name']).numtoday.sum().unstack())
+num_of_infections_per_day
+
+
+# In[77]:
+
+
+# plotout the above dataset
+num_of_infections_per_day.plot(figsize=(25,20), linewidth=3, color=['firebrick', 'gray', 'blue','lime'])
+sns.despine()
+plt.title("For the last seven consecutive days most hard-hit provinces are Quebec and Ontario", fontsize=25, loc='left', color='gray', fontweight='bold')
+ax = plt.gca()
+ax.tick_params(axis='both', colors='blue', labelsize=16, length=0)
+plt.ylim(0, None)
+g = ax.get_yticks()
+plt.yticks(g[1:])
+plt.xlabel('')
+plt.ylabel('Daily counts', rotation=0, position=(-.5, .7),fontsize=16, ha='left', labelpad=125, color='gray', fontweight='bold')
+plt.rc('legend',fontsize=30)
+plt.legend(title="Province Name", fontsize=15, title_fontsize=20, loc=1)
+ax.get_yaxis().set_major_formatter(FuncFormatter(lambda x, p:format(str(int(x/1000))+'K')))                                                                                                                                                 
+plt.show()
+
+
+# In[ ]:
+
+
+
+
